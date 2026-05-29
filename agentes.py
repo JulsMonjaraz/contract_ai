@@ -45,7 +45,7 @@ def ejecutar_analisis(texto_contrato: str) -> str:
     os.environ["CONTRATO_ACTUAL_TEXTO"] = texto_contrato
 
     # =====================================================================
-    # 🕵️‍♂️ AGENTE 1: EL AUDITOR LEGAL (Cazador de trampas y números exactos)
+    # 🕵️‍♂️ AGENTE 1: EL AUDITOR LEGAL
     # =====================================================================
     auditor_legal = Agent(
         role="Auditor Legal Senior de Contratos Internacionales",
@@ -58,7 +58,7 @@ def ejecutar_analisis(texto_contrato: str) -> str:
     )
 
     # =====================================================================
-    # 🌍 AGENTE 2: EL ASESOR DE RELOCALIZACIÓN (Especialista en Visados y Karta Pobytu)
+    # 🌍 AGENTE 2: EL ASESOR DE RELOCALIZACIÓN
     # =====================================================================
     asesor_repatriacion = Agent(
         role="Asesor Senior de Movilidad Global e Inmigración",
@@ -69,10 +69,10 @@ def ejecutar_analisis(texto_contrato: str) -> str:
     )
 
     # =====================================================================
-    # 📋 TAREAS (Asignación secuencial de objetivos específicos)
+    # 📋 TAREAS
     # =====================================================================
     tarea_auditoria = Task(
-        description="""Utiliza la herramienta de búsqueda semántica para localizar exhaustivamente las secciones de penalizaciones, propiedad intelectual y rescisión. 
+        description="""Utiliza la herramienta de búsqueda semántica para localizar las secciones de penalizaciones, propiedad intelectual y rescisión. 
         Genera una lista técnica con los riesgos legales más altos encontrados, citando montos o condiciones textuales detectadas.""",
         expected_output="Un informe técnico y detallado estructurando los riesgos y penalizaciones específicas del contrato.",
         agent=auditor_legal,
@@ -81,14 +81,16 @@ def ejecutar_analisis(texto_contrato: str) -> str:
     tarea_asesoria = Task(
         description="""Basándote en el informe del Auditor Legal, evalúa el impacto en los visados de reubicación y estabilidad laboral. 
         Redacta soluciones reales y contrapropuestas legales listas para negociar con la empresa.""",
-        expected_output="""Tu respuesta debe ser TEXTO PLANO DIRECTO. PROHIBIDO usar bloques de código Markdown con la palabra ```html o ```. PROHIBIDO inventar títulos iniciales. Entrega exactamente este formato:
-
-Escribe aquí directamente el contenido de los riesgos, leyes aplicables (ej. Kodeks Cywilny) y el diagnóstico migratorio detallado para la Karta Pobytu. No pongas etiquetas HTML contenedoras.
-
-plan de mitigación:
-Escribe aquí el plan de mitigación detallado, las acciones inmediatas y las plantillas de correo exactas para renegociar las cláusulas abusivas encontradas.
-
-CRÍTICO: La frase exacta 'plan de mitigación:' (en minúsculas y con dos puntos) DEBE separar ambos bloques para que el sistema funcione.""",
+        expected_output="""Un informe ejecutivo estructurado estrictamente en dos bloques principales de HTML utilizando las clases del frontend:
+        
+        1. En '<div class="caja-verde-segura">' (Análisis de Impacto):
+           - Tipo de contrato detectado y leyes aplicables (ej. Kodeks Cywilny).
+           - Los 3 riesgos más críticos encontrados, citando el monto o contexto (ej. 'Multa de X cantidad').
+           - Diagnóstico de reubicación: ¿Este contrato sirve para tramitar una residencia estable o tiene banderas rojas?
+           
+        2. En '<div class="caja-azul-segura">' (Strategic Mitigation Framework):
+           - Contrapropuestas exactas: Texto alternativo legal listo para copiar, pegar y enviar a la empresa para negociar y corregir los riesgos hallados.
+           - Viñetas con las acciones inmediatas que debe tomar el profesional.""",
         agent=asesor_repatriacion,
     )
 
@@ -97,12 +99,9 @@ CRÍTICO: La frase exacta 'plan de mitigación:' (en minúsculas y con dos punto
     # =====================================================================
     crew = Crew(
         agents=[auditor_legal, asesor_repatriacion],
-        tasks=[
-            tarea_auditoria,
-            tarea_asesoria,
-        ],  # 🛠️ CORREGIDO: Ahora coincide exactamente con tus variables
+        tasks=[tarea_auditoria, tarea_asesoria],
         process=Process.sequential,
-        verbose=True,  # Lo dejamos en True para que puedas auditar en la consola de Render qué hace cada agente
+        verbose=True,
     )
 
     resultado = crew.kickoff()
