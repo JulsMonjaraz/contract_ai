@@ -81,16 +81,14 @@ def ejecutar_analisis(texto_contrato: str) -> str:
     tarea_asesoria = Task(
         description="""Basándote en el informe del Auditor Legal, evalúa el impacto en los visados de reubicación y estabilidad laboral. 
         Redacta soluciones reales y contrapropuestas legales listas para negociar con la empresa.""",
-        expected_output="""Un informe ejecutivo estructurado estrictamente en dos bloques principales de HTML utilizando las clases exactas del frontend (sin agregar bloques Markdown adicionales ni texto fuera de ellas):
-        
-        1. En '<div class="caja-verde-segura">' (Análisis de Impacto):
-           - Tipo de contrato detectado y leyes aplicables (ej. Kodeks Cywilny).
-           - Los 3 riesgos más críticos encontrados en el texto, con montos o citas breves de penalizaciones.
-           - Diagnóstico migratorio específico sobre la viabilidad del contrato para visados o Karta Pobytu.
-           
-        2. En '<div class="caja-azul-segura">' (Strategic Mitigation Framework):
-           - Plan de mitigación: Escribe plantillas o textos alternativos exactos que el usuario pueda copiar, pegar y enviar por correo para negociar la corrección de las cláusulas abusivas encontradas.
-           - Plan de Mitigación: (Asegúrate de incluir explícitamente esta frase exacta al inicio del bloque para que el frontend pueda separar el contenido correctamente).""",
+        expected_output="""Tu respuesta debe ser TEXTO PLANO DIRECTO. PROHIBIDO usar bloques de código Markdown con la palabra ```html o ```. PROHIBIDO inventar títulos iniciales. Entrega exactamente este formato:
+
+Escribe aquí directamente el contenido de los riesgos, leyes aplicables (ej. Kodeks Cywilny) y el diagnóstico migratorio detallado para la Karta Pobytu. No pongas etiquetas HTML contenedoras.
+
+plan de mitigación:
+Escribe aquí el plan de mitigación detallado, las acciones inmediatas y las plantillas de correo exactas para renegociar las cláusulas abusivas encontradas.
+
+CRÍTICO: La frase exacta 'plan de mitigación:' (en minúsculas y con dos puntos) DEBE separar ambos bloques para que el sistema funcione.""",
         agent=asesor_repatriacion,
     )
 
