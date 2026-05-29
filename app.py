@@ -173,7 +173,7 @@ st.markdown(
     "<div style='text-align: center; margin-bottom: 20px; font-size: 16px;'>"
     "Identify <span style='color: white;'>fraudulent clauses</span>, "
     "mitigate international relocation risks, and "
-    "<span style='color: green;'>secure your professional future</span> overseas."
+    "<span style='color: white;'>secure your professional future</span> overseas."
     "</div>",
     unsafe_allow_html=True,
 )
