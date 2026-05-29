@@ -155,7 +155,6 @@ def generar_pdf_estilizado(titulo_contrato, texto_reporte):
 # 🎛 4. INTERFAZ VISUAL: CONTRAXAI DASHBOARD
 # =====================================================================
 
-# Inicialización segura de estados obligatorios
 if "reporte_seleccionado" not in st.session_state:
     st.session_state.reporte_seleccionado = None
 if "nombre_seleccionado" not in st.session_state:
@@ -163,7 +162,6 @@ if "nombre_seleccionado" not in st.session_state:
 if "vista_activa" not in st.session_state:
     st.session_state.vista_activa = "dashboard"
 
-# Encabezado estático principal
 st.markdown("<h1 style='text-align: center;'>ContraxAI 🛡️</h1>", unsafe_allow_html=True)
 st.markdown(
     "<h3 style='text-align: center; color: #3E9DF3; font-weight: normal;'>Secure Multi-Agent Contract Auditing & <span style='color: #3E9DF3;'>GDPR Compliance</span></h3>",
@@ -179,11 +177,17 @@ st.markdown(
 )
 st.write("---")
 
-# ---- CONEXIÓN DINÁMICA A LA BASE DE DATOS LOCAL (VAULT) ----
+# URL Base Global de Producción en Render (Con barras diagonales correctas)
+BASE_URL = "https://contract-ai-z10o.onrender.com"
+
+# ---- CONEXIÓN DINÁMICA A LA BASE DE DATOS EN LA NUBE ----
 st.sidebar.header("📜 ContraxAI Vault")
 
 try:
-    respuesta_historial = requests.get("http://127.0.0.1:8000/historial/").json()
+    # Llamamos a /historial/ con la barra al final tal como está en tu main.py
+    respuesta_historial = requests.get(f"{BASE_URL}/historial/").json()
+
+    # Extraemos los datos usando las llaves exactas de tu main.py
     total = respuesta_historial.get("total_analizados", 0)
     st.sidebar.metric(label="Total Audited Contracts", value=total)
     st.sidebar.write("---")
@@ -194,11 +198,12 @@ try:
             key=f"vault_btn_{registro['id']}",
             use_container_width=True,
         ):
+            # Tu base de datos guarda la columna como 'reporte_ia'
             st.session_state.reporte_seleccionado = registro["reporte_ia"]
             st.session_state.nombre_seleccionado = registro["nombre_archivo"]
             st.session_state.vista_activa = "historial"
             st.rerun()
-except Exception:
+except Exception as e:
     st.sidebar.error("Unable to connect to the ContraxAI secure vault.")
 
 
@@ -218,7 +223,6 @@ if st.session_state.vista_activa == "historial":
         unsafe_allow_html=True,
     )
 
-    # --- LIMPIEZA INICIAL ---
     reporte_crudo = (
         st.session_state.reporte_seleccionado or "No auditing data available."
     )
@@ -258,13 +262,9 @@ if st.session_state.vista_activa == "historial":
         else:
             impacto_bloque = reporte_texto.replace("Impacto en el Visado:", "").strip()
 
-    # Bloque 1: Impacto
     st.markdown("### 🚨 Visa & Relocation Impact Analysis")
-
-    # Reemplazamos saltos de línea por breaks de HTML para conservar el formato
     impacto_html_formateado = impacto_bloque.replace("\n", "<br>")
 
-    # Se eliminan caracteres especiales problemáticos como barras de puntos extensivos
     html_caja_verde = f"""
 <div class="caja-verde-segura">
 <div style="border-bottom: 1px solid #059669; padding-bottom: 10px; margin-bottom: 15px;">
@@ -283,7 +283,6 @@ This section details the primary risk variables extracted by the multi-agent leg
     with st.container():
         st.markdown(html_caja_verde, unsafe_allow_html=True)
 
-    # Bloque 2: Mitigación
     if mitigacion_bloque:
         st.markdown("### 🛠️ Strategic Mitigation Framework")
         with st.expander("📋 Deployment Plan & Continuous Monitoring", expanded=True):
@@ -293,7 +292,6 @@ This section details the primary risk variables extracted by the multi-agent leg
                     unsafe_allow_html=True,
                 )
 
-    # 🚨 ACCIONES GLOBALES
     st.write("---")
     col_pdf, col_back = st.columns(2)
 
@@ -343,23 +341,30 @@ else:
                 "The multi-agent crew is analyzing the document structure..."
             ):
                 try:
+                    # Extraemos el texto localmente en Streamlit usando pdfplumber
                     texto_extraido = ""
                     with pdfplumber.open(archivo_subido) as pdf:
                         for page in pdf.pages:
-                            texto_extraido += page.extract_text() + "\n"
+                            pag_texto = page.extract_text()
+                            if pag_texto:
+                                texto_extraido += pag_texto + "\n"
 
+                    # 🛠️ ENVÍO EN FORMATO JSON EXACTO (ContratoRequest)
+                    payload_json = {
+                        "texto": texto_extraido,
+                        "nombre_archivo": archivo_subido.name,
+                    }
+
+                    # Apuntamos a /procesar-contrato/ con barra final como tu main.py
                     respuesta = requests.post(
-                        "http://127.0.0.1:8000/procesar-contrato/",
-                        json={
-                            "texto": texto_extraido,
-                            "nombre_archivo": archivo_subido.name,
-                        },
+                        f"{BASE_URL}/procesar-contrato/", json=payload_json
                     )
 
                     if respuesta.status_code == 200:
                         resultado = respuesta.json()
                         st.success("Analysis successfully completed.")
 
+                        # Tu main.py devuelve {"resultado": resultado}
                         st.session_state.reporte_seleccionado = resultado.get(
                             "resultado", "Sin resultado"
                         )
@@ -367,7 +372,9 @@ else:
                         st.session_state.vista_activa = "historial"
                         st.rerun()
                     else:
-                        st.error(f"Audit Core Error: {respuesta.text}")
+                        st.error(
+                            f"Audit Core Error ({respuesta.status_code}): {respuesta.text}"
+                        )
                 except Exception as e:
                     st.error(
                         f"Failed to communicate with the ContraxAI backend core: {str(e)}"
