@@ -17,7 +17,7 @@ os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
 
 @tool("Buscar en el Contrato")
 def buscar_en_contrato(query: str) -> str:
-    """Busca fragmentos relevantes dentro del contrato."""
+    """Busca fragmentos relevantes dentro del contrato utilizando base de datos vectorial."""
     texto_contrato = os.environ.get("CONTRATO_ACTUAL_TEXTO", "")
 
     if not texto_contrato:
@@ -44,40 +44,67 @@ def buscar_en_contrato(query: str) -> str:
 def ejecutar_analisis(texto_contrato: str) -> str:
     os.environ["CONTRATO_ACTUAL_TEXTO"] = texto_contrato
 
+    # =====================================================================
+    # 🕵️‍♂️ AGENTE 1: EL AUDITOR LEGAL (Cazador de trampas y números exactos)
+    # =====================================================================
     auditor_legal = Agent(
-        role="Auditor Legal",
-        goal="Identificar riesgos contractuales y clausulas abusivas.",
-        backstory="Eres un abogado experto en derecho corporativo para detectar trampas legales.",
-        verbose=False,
-        # Eliminamos el parámetro llm de aquí
+        role="Auditor Legal Senior de Contratos Internacionales",
+        goal="Identificar con precisión quirúrgica cláusulas abusivas, penalizaciones financieras ocultas, exclusividades agresivas y vacíos legales en el texto del contrato.",
+        backstory="""Eres un abogado de élite experto en derecho corporativo y comercial europeo, especializado en contratos B2B y laborales (como el Código Civil Polaco - Kodeks Cywilny). 
+        Tu obsesión es encontrar montos exactos de multas, cláusulas desproporcionadas de propiedad intelectual y periodos de preaviso (Notice Periods) peligrosos. 
+        No asumes nada; usas tu herramienta de búsqueda semántica para auditar el documento línea por línea y extraer datos duros y cotizaciones textuales.""",
+        verbose=True,
         tools=[buscar_en_contrato],
     )
 
+    # =====================================================================
+    # 🌍 AGENTE 2: EL ASESOR DE RELOCALIZACIÓN (Especialista en Visados y Karta Pobytu)
+    # =====================================================================
     asesor_repatriacion = Agent(
-        role="Asesor de Relocalizacion",
-        goal="Evaluar el impacto del contrato en la vida del trabajador (visados, mudanza).",
-        backstory="Experto en movilidad global. Proteges al empleado en el extranjero.",
-        verbose=False,
-        # Eliminamos el parámetro llm de aquí
+        role="Asesor Senior de Movilidad Global e Inmigración",
+        goal="Evaluar el impacto real del contrato sobre el estatus migratorio del profesional, su visado de trabajo, reubicación y su futura Karta Pobytu.",
+        backstory="""Eres un especialista en extranjería y movilidad internacional, con conocimiento profundo de los criterios de las oficinas de inmigración en la Unión Europea (como el Mazowiecki Urząd Wojewódzki en Varsovia). 
+        Tomas los hallazgos del Auditor Legal y dictaminas si el salario, las horas, el tipo de contrato y las cláusulas de rescisión ponen en riesgo la estabilidad migratoria del empleado o si bloquean un trámite de residencia legal en el extranjero.""",
+        verbose=True,
     )
 
+    # =====================================================================
+    # 📋 TAREAS (Asignación secuencial de objetivos específicos)
+    # =====================================================================
     tarea_auditoria = Task(
-        description="Localiza las secciones de penalizaciones y rescision. Genera una lista con los 3 riesgos legales mas altos.",
-        expected_output="Un informe estructurado detallando los riesgos.",
+        description="""Utiliza la herramienta de búsqueda semántica para localizar exhaustivamente las secciones de penalizaciones, propiedad intelectual y rescisión. 
+        Genera una lista técnica con los riesgos legales más altos encontrados, citando montos o condiciones textuales detectadas.""",
+        expected_output="Un informe técnico y detallado estructurando los riesgos y penalizaciones específicas del contrato.",
         agent=auditor_legal,
     )
 
     tarea_asesoria = Task(
-        description="Basandote en el informe del Auditor Legal, explica que le pasaria al visado si es despedido, y propon mejoras.",
-        expected_output="Un plan de mitigacion claro.",
+        description="""Basándote en el informe del Auditor Legal, evalúa el impacto en los visados de reubicación y estabilidad laboral. 
+        Redacta soluciones reales y contrapropuestas legales listas para negociar con la empresa.""",
+        expected_output="""Un informe ejecutivo estructurado estrictamente en dos bloques principales de HTML utilizando las clases exactas del frontend (sin agregar bloques Markdown adicionales ni texto fuera de ellas):
+        
+        1. En '<div class="caja-verde-segura">' (Análisis de Impacto):
+           - Tipo de contrato detectado y leyes aplicables (ej. Kodeks Cywilny).
+           - Los 3 riesgos más críticos encontrados en el texto, con montos o citas breves de penalizaciones.
+           - Diagnóstico migratorio específico sobre la viabilidad del contrato para visados o Karta Pobytu.
+           
+        2. En '<div class="caja-azul-segura">' (Strategic Mitigation Framework):
+           - Plan de mitigación: Escribe plantillas o textos alternativos exactos que el usuario pueda copiar, pegar y enviar por correo para negociar la corrección de las cláusulas abusivas encontradas.
+           - Plan de Mitigación: (Asegúrate de incluir explícitamente esta frase exacta al inicio del bloque para que el frontend pueda separar el contenido correctamente).""",
         agent=asesor_repatriacion,
     )
 
+    # =====================================================================
+    # 🚀 ORQUESTACIÓN DE LA CREW
+    # =====================================================================
     crew = Crew(
         agents=[auditor_legal, asesor_repatriacion],
-        tasks=[tarea_auditoria, tarea_asesoria],
+        tasks=[
+            tarea_auditoria,
+            tarea_asesoria,
+        ],  # 🛠️ CORREGIDO: Ahora coincide exactamente con tus variables
         process=Process.sequential,
-        verbose=False,
+        verbose=True,  # Lo dejamos en True para que puedas auditar en la consola de Render qué hace cada agente
     )
 
     resultado = crew.kickoff()
