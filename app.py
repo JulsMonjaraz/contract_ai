@@ -45,8 +45,7 @@ st.markdown(
             background-color: #F8F9FA !important;
         }
         
-        /* 📜 CLASES PERSONALIZADAS PARA PREVENIR ERRORES DE FORMATO DE LA IA */
-        /* 🟢 CONTENEDOR ANÁLISIS DE IMPACTO */
+        /* 📜 CLASES PERSONALIZADAS PARA CONTENEDORES */
         .caja-verde-segura {
             background-color: #064E3B !important; 
             padding: 22px !important; 
@@ -65,7 +64,6 @@ st.markdown(
             border: none !important;
         }
 
-        /* 🔵 CONTENEDOR MARCO DE MITIGACIÓN */
         .caja-azul-segura {
             background-color: #0A2540 !important; 
             padding: 20px !important; 
@@ -135,7 +133,12 @@ def generar_pdf_estilizado(titulo_contrato, texto_reporte):
     story.append(Paragraph(f"Documento analizado: {titulo_contrato}", estilo_subtitulo))
     story.append(Spacer(1, 15))
 
-    texto_limpio = texto_reporte.replace("**", "")
+    texto_limpio = (
+        texto_reporte.replace("**", "")
+        .replace('<div class="caja-verde-segura">', "")
+        .replace('<div class="caja-azul-segura">', "")
+        .replace("</div>", "")
+    )
     parrafos = texto_limpio.split("\n")
     for parrafo in parrafos:
         if parrafo.strip():
@@ -159,6 +162,8 @@ if "reporte_seleccionado" not in st.session_state:
     st.session_state.reporte_seleccionado = None
 if "nombre_seleccionado" not in st.session_state:
     st.session_state.nombre_seleccionado = None
+if "id_seleccionado" not in st.session_state:
+    st.session_state.id_seleccionado = None
 if "vista_activa" not in st.session_state:
     st.session_state.vista_activa = "dashboard"
 
@@ -168,26 +173,17 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown(
-    "<div style='text-align: center; margin-bottom: 20px; font-size: 16px;'>"
-    "Identify <span style='color: white;'>fraudulent clauses</span>, "
-    "mitigate international relocation risks, and "
-    "<span style='color: white;'>secure your professional future</span> overseas."
-    "</div>",
+    "<div style='text-align: center; margin-bottom: 20px; font-size: 16px;'>Identify professional risks and protect your international relocation.</div>",
     unsafe_allow_html=True,
 )
 st.write("---")
 
-# URL Base Global de Producción en Render (Con barras diagonales correctas)
 BASE_URL = "https://contract-ai-z10o.onrender.com"
 
-# ---- CONEXIÓN DINÁMICA A LA BASE DE DATOS EN LA NUBE ----
 st.sidebar.header("📜 ContraxAI Vault")
 
 try:
-    # Llamamos a /historial/ con la barra al final tal como está en tu main.py
     respuesta_historial = requests.get(f"{BASE_URL}/historial/").json()
-
-    # Extraemos los datos usando las llaves exactas de tu main.py
     total = respuesta_historial.get("total_analizados", 0)
     st.sidebar.metric(label="Total Audited Contracts", value=total)
     st.sidebar.write("---")
@@ -198,110 +194,32 @@ try:
             key=f"vault_btn_{registro['id']}",
             use_container_width=True,
         ):
-            # Tu base de datos guarda la columna como 'reporte_ia'
             st.session_state.reporte_seleccionado = registro["reporte_ia"]
             st.session_state.nombre_seleccionado = registro["nombre_archivo"]
+            st.session_state.id_seleccionado = registro["id"]
             st.session_state.vista_activa = "historial"
             st.rerun()
 except Exception as e:
     st.sidebar.error("Unable to connect to the ContraxAI secure vault.")
 
 
-# =====================================================================
-# 🔀 CONTROL DE VISTAS (PANTALLAS)
-# =====================================================================
-
 if st.session_state.vista_activa == "historial":
-    # ---- PANTALLA A: DETALLE DEL REPORTE SELECCIONADO ----
     st.markdown(
-        f"""
-        <div style='background-color: #1E293B; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 5px solid #10B981;'>
-            <h3 style='margin: 0; color: white;'>📋 ContraxAI Intelligence Report</h3>
-            <p style='margin: 5px 0 0 0; color: #94A3B8; font-size: 14px;'>Target Document: <b>{st.session_state.nombre_seleccionado}</b></p>
-        </div>
-        """,
-        unsafe_allow_html=True,
+        f"### 📋 ContraxAI Intelligence Report: {st.session_state.nombre_seleccionado}"
     )
 
-    reporte_crudo = (
-        st.session_state.reporte_seleccionado or "No auditing data available."
-    )
-    reporte_texto = reporte_crudo.replace("**", "")
+    reporte_crudo = st.session_state.reporte_seleccionado or "No data available."
 
-    impacto_bloque = "No specific visa impact data found."
-    mitigacion_bloque = ""
-
-    marcador = "plan de mitigación:"
-    texto_minusculas = reporte_texto.lower()
-
-    if marcador in texto_minusculas:
-        indice_corte = texto_minusculas.index(marcador)
-        impacto_bloque = (
-            reporte_texto[:indice_corte]
-            .replace("Impacto en el Visado:", "")
-            .replace("IMPACTO EN EL VISADO:", "")
-            .strip()
-        )
-        mitigacion_bloque = (
-            reporte_texto[indice_corte:]
-            .replace("Plan de Mitigación:", "")
-            .replace("Plan de mitigación:", "")
-            .replace("PLAN DE MITIGACIÓN:", "")
-            .strip()
-        )
-    else:
-        marcador_plan_b = "mitigación"
-        if marcador_plan_b in texto_minusculas:
-            indice_corte = texto_minusculas.index(marcador_plan_b)
-            impacto_bloque = (
-                reporte_texto[:indice_corte]
-                .replace("Impacto en el Visado:", "")
-                .strip()
-            )
-            mitigacion_bloque = reporte_texto[indice_corte:].strip()
-        else:
-            impacto_bloque = reporte_texto.replace("Impacto en el Visado:", "").strip()
-
-    st.markdown("### 🚨 Visa & Relocation Impact Analysis")
-    impacto_html_formateado = impacto_bloque.replace("\n", "<br>")
-
-    html_caja_verde = f"""
-<div class="caja-verde-segura">
-<div style="border-bottom: 1px solid #059669; padding-bottom: 10px; margin-bottom: 15px;">
-<h4 style="margin: 0; color: #F0FDF4; font-size: 17px;">📋 LEGAL RISK SUMMARY & AUDIT DISCLOSURE</h4>
-<p style="margin: 3px 0 0 0; color: #A7F3D0; font-size: 12px; text-transform: uppercase;">Status: Review Completed | Severity Tier: Critical Contingency Check</p>
-</div>
-<p style="margin-bottom: 12px;"><b>1. EXECUTIVE ANALYSIS & COMPLIANCE WARNING:</b><br>
-This section details the primary risk variables extracted by the multi-agent legal engine. Any discrepancy identified below could jeopardize cross-border verification, temporary residency status, or immediate professional relocation compliance due to hidden enforcement metrics.</p>
-<p style="margin-bottom: 15px;"><b>2. CORE VULNERABILITY FINDINGS:</b><br>{impacto_html_formateado}</p>
-<div style="background-color: #047857; padding: 12px; border-radius: 6px; border-left: 4px solid #34D399; margin-top: 10px;">
-<span style="font-size: 13px; color: #F0FDF4; display: block;">⚠️ <b>Relocation Advisory Note:</b> If the text above identifies unvouched terminations or strict jurisdictional bindings, legal oversight recommends halting automated execution until a physical framework amendment is staged.</span>
-</div>
-</div>
-"""
-
-    with st.container():
-        st.markdown(html_caja_verde, unsafe_allow_html=True)
-
-    if mitigacion_bloque:
-        st.markdown("### 🛠️ Strategic Mitigation Framework")
-        with st.expander("📋 Deployment Plan & Continuous Monitoring", expanded=True):
-            with st.container():
-                st.markdown(
-                    f'<div class="caja-azul-segura">{mitigacion_bloque}</div>',
-                    unsafe_allow_html=True,
-                )
+    # Renderizado directo del HTML generado de manera nativa por la Crew
+    st.markdown(reporte_crudo, unsafe_allow_html=True)
 
     st.write("---")
-    col_pdf, col_back = st.columns(2)
+    col_pdf, col_delete, col_back = st.columns(3)
 
     with col_pdf:
-        nombre_limpio = (
-            str(st.session_state.nombre_seleccionado).replace(".pdf", "")
-            if st.session_state.nombre_seleccionado
-            else "Report"
+        nombre_archivo_pdf = (
+            f"ContraxAI_Report_{st.session_state.nombre_seleccionado}.pdf"
         )
-        nombre_archivo_pdf = f"ContraxAI_Report_{nombre_limpio}.pdf"
         try:
             pdf_ejecutivo = generar_pdf_estilizado(
                 st.session_state.nombre_seleccionado,
@@ -316,32 +234,54 @@ This section details the primary risk variables extracted by the multi-agent leg
                 use_container_width=True,
             )
         except Exception as e:
-            st.error(f"Error compiling PDF: {str(e)}")
+            st.error(f"Error compiling PDF")
+
+    with col_delete:
+        if st.button("🗑️ Delete from Vault", use_container_width=True):
+            contrato_id_actual = st.session_state.get("id_seleccionado")
+            if contrato_id_actual:
+                with st.spinner("Deleting record from secure vault..."):
+                    try:
+                        res = requests.delete(
+                            f"{BASE_URL}/eliminar-contrato/{contrato_id_actual}"
+                        )
+                        if res.status_code == 200:
+                            st.success("Contract successfully purged.")
+                            st.session_state.reporte_seleccionado = None
+                            st.session_state.nombre_seleccionado = None
+                            st.session_state.id_seleccionado = None
+                            st.session_state.vista_activa = "dashboard"
+                            st.rerun()
+                        else:
+                            st.error(
+                                "Failed to delete the contract from the cloud database."
+                            )
+                    except Exception as e:
+                        st.error("Communication error with the core backend.")
+            else:
+                st.error("Contract ID not tracked in the current session.")
 
     with col_back:
-        if st.button(
-            "🔄 Audit Another Contract", type="secondary", use_container_width=True
-        ):
+        if st.button("🔄 Audit Another Contract", use_container_width=True):
             st.session_state.reporte_seleccionado = None
             st.session_state.nombre_seleccionado = None
+            st.session_state.id_seleccionado = None
             st.session_state.vista_activa = "dashboard"
             st.rerun()
 
 else:
-    # ---- PANTALLA B: FILE UPLOADER PRINCIPAL ----
     archivo_subido = st.file_uploader(
-        "Upload your contract in PDF format for encrypted analysis", type=["pdf"]
+        "Upload your contract in PDF format", type=["pdf"]
     )
 
     if archivo_subido is not None:
-        st.info(f"🔒 Document successfully staged for analysis: {archivo_subido.name}")
+        st.info(f"🔒 Document successfully staged: {archivo_subido.name}")
 
         if st.button("🚀 Launch ContraxAI Audit", type="primary"):
             with st.spinner(
                 "The multi-agent crew is analyzing the document structure..."
             ):
                 try:
-                    # Extraemos el texto localmente en Streamlit usando pdfplumber
                     texto_extraido = ""
                     with pdfplumber.open(archivo_subido) as pdf:
                         for page in pdf.pages:
@@ -349,13 +289,11 @@ else:
                             if pag_texto:
                                 texto_extraido += pag_texto + "\n"
 
-                    # 🛠️ ENVÍO EN FORMATO JSON EXACTO (ContratoRequest)
                     payload_json = {
                         "texto": texto_extraido,
                         "nombre_archivo": archivo_subido.name,
                     }
 
-                    # Apuntamos a /procesar-contrato/ con barra final como tu main.py
                     respuesta = requests.post(
                         f"{BASE_URL}/procesar-contrato/", json=payload_json
                     )
@@ -364,41 +302,19 @@ else:
                         resultado = respuesta.json()
                         st.success("Analysis successfully completed.")
 
-                        # Tu main.py devuelve {"resultado": resultado}
                         st.session_state.reporte_seleccionado = resultado.get(
                             "resultado", "Sin resultado"
                         )
                         st.session_state.nombre_seleccionado = archivo_subido.name
-                        st.session_state.vista_activa = "historial"
+                        st.session_state.vista_activa = "dashboard"
                         st.rerun()
                     else:
-                        st.error(
-                            f"Audit Core Error ({respuesta.status_code}): {respuesta.text}"
-                        )
+                        st.error(f"Audit Core Error ({respuesta.status_code})")
                 except Exception as e:
-                    st.error(
-                        f"Failed to communicate with the ContraxAI backend core: {str(e)}"
-                    )
+                    st.error(f"Failed to communicate with the core backend.")
 
-    else:
-        st.write("")
-        st.info(
-            "💡 Please upload a new contract above or select an existing record from the ContraxAI Vault sidebar to view an active audit."
-        )
-
-# =====================================================================
-# ⚡ 5. FOOTER GLOBAL FIJO
-# =====================================================================
 st.write("")
-st.write("")
-html_footer = """
-<div style="text-align: center; margin-top: 180px; padding: 15px; border-top: 1px solid #1E293B;">
-<p style="color: #64748B; font-size: 15px; margin: 0;">
-    ContraxAI 🛡️ © 2026 | Encrypted Multi-Agent Core Framework | All Rights Reserved.
-</p>
-<p style="color: #475569; font-size: 11px; margin: 4px 0 0 0;">
-    Designed for secure international relocation analytics and automated GDPR clause validation.
-</p>
-</div>
-"""
-st.markdown(html_footer, unsafe_allow_html=True)
+st.markdown(
+    "<div style='text-align: center; color: #64748B; font-size: 12px; margin-top:100px;'>ContraxAI 🛡️ © 2026</div>",
+    unsafe_allow_html=True,
+)
