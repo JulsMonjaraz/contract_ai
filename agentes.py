@@ -20,7 +20,7 @@ PERSIST_DIR = os.path.join(os.path.dirname(__file__), "chroma_db")
 
 
 # =====================================================================
-# 🧮 HERRAMIENTA DE BÚSQUEDA VECTORIAL (RAG)
+# HERRAMIENTA DE BÚSQUEDA VECTORIAL (RAG)
 # =====================================================================
 @tool("Buscar en el Contrato")
 def buscar_en_contrato(query: str) -> str:
@@ -48,7 +48,7 @@ def buscar_en_contrato(query: str) -> str:
 
 
 # =====================================================================
-# 🚀 MOTOR PRINCIPAL DE EJECUCIÓN
+#  MOTOR PRINCIPAL DE EJECUCIÓN
 # =====================================================================
 def ejecutar_analisis(texto_contrato: str) -> str:
     os.environ["CONTRATO_ACTUAL_TEXTO"] = texto_contrato
