@@ -20,14 +20,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2️⃣ Inicializamos el cliente de Supabase asegurando el tipo 'str' para Pylance
-SUPABASE_URL = os.getenv("SUPABASE_URL") or ""
-SUPABASE_KEY = os.getenv("SUPABASE_KEY") or ""
+# 2️⃣ Inicializamos el cliente de Supabase leyendo directo del entorno seguro
+# Intentamos leer SUPABASE_URL (local) o DATABASE_URL (Render)
+SUPABASE_URL = os.getenv("SUPABASE_URL") or os.getenv("DATABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
+# Validamos explícitamente antes de pasárselo al cliente
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print("⚠️ ¡Alerta! Faltan las credenciales de Supabase en el archivo .env")
+    raise ValueError(
+        "❌ ERROR CRÍTICO: Faltan las credenciales de la base de datos. "
+        "Asegúrate de tener SUPABASE_URL (o DATABASE_URL) y SUPABASE_KEY configuradas."
+    )
 
-# Al usar 'or ""' arriba, garantizamos que create_client reciba un str y no un None
+# Inicializamos el cliente oficial
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Nombre exacto de tu tabla en Supabase (Cámbialo si tu tabla se llama distinto)
