@@ -178,7 +178,7 @@ st.markdown(
 )
 st.write("---")
 
-BASE_URL = "https://contract-ai-z10o.onrender.com"
+BASE_URL = "http://127.0.0.1:8000"
 
 st.sidebar.header("📜 ContraxAI Vault")
 

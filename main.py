@@ -35,8 +35,8 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 # Inicializamos el cliente oficial
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Nombre exacto de tu tabla en Supabase (Cámbialo si tu tabla se llama distinto)
-TABLA_HISTORIAL = "tu_tabla_de_supabase"
+# ✅ CORREGIDO: Nombre exacto de tu tabla real en Supabase
+TABLA_HISTORIAL = "registros"
 
 
 class ContratoRequest(BaseModel):
