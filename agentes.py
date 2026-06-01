@@ -15,25 +15,25 @@ if api_key:
 os.environ["OPENAI_MODEL_NAME"] = "gpt-4o"
 os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
 
-# 📁 Ruta física para almacenar la Base de Datos Vectorial en el servidor
+# 📁 Physical path to store the Vector Database on the server
 PERSIST_DIR = os.path.join(os.path.dirname(__file__), "chroma_db")
 
 
 # =====================================================================
-# HERRAMIENTA DE BÚSQUEDA VECTORIAL (RAG)
+# VECTOR SEARCH TOOL (RAG)
 # =====================================================================
 @tool("Buscar en el Contrato")
 def buscar_en_contrato(query: str) -> str:
-    """Busca fragmentos relevantes dentro de la base de datos vectorial persistente del contrato."""
-    # Verificamos si la base de datos realmente existe antes de consultarla
+    """Searches for relevant fragments within the persistent vector database of the contract."""
+    # Verify if the database actually exists before querying it
     if not os.path.exists(PERSIST_DIR) or not os.listdir(PERSIST_DIR):
-        return "Error: La base de datos vectorial no contiene información indexada."
+        return "Error: The vector database does not contain indexed information."
 
-    # Cargamos Chroma apuntando directamente al directorio persistente
+    # Load Chroma pointing directly to the persistent directory
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     db = Chroma(persist_directory=PERSIST_DIR, embedding_function=embeddings)
 
-    # Limpieza de acentos para optimizar la coincidencia semántica
+    # Accent cleaning to optimize semantic matching
     query_limpia = (
         query.replace("á", "a")
         .replace("é", "e")
@@ -42,87 +42,91 @@ def buscar_en_contrato(query: str) -> str:
         .replace("ú", "u")
     )
 
-    # Recuperamos los 3 fragmentos de texto más similares
+    # Retrieve the 3 most similar text fragments
     resultados = db.similarity_search(query_limpia, k=3)
     return "\n---\n".join([doc.page_content for doc in resultados])
 
 
 # =====================================================================
-#  MOTOR PRINCIPAL DE EJECUCIÓN
+#  CORE EXECUTION ENGINE
 # =====================================================================
 def ejecutar_analisis(texto_contrato: str) -> str:
     os.environ["CONTRATO_ACTUAL_TEXTO"] = texto_contrato
 
-    # 1️⃣ LIMPIEZA DE SESIÓN ANTERIOR (Evita que se mezclen fragmentos de contratos viejos)
+    # 1️⃣ PREVIOUS SESSION CLEANING (Prevents mixing fragments from old contracts)
     if os.path.exists(PERSIST_DIR):
         shutil.rmtree(PERSIST_DIR)
     os.makedirs(PERSIST_DIR, exist_ok=True)
 
-    # 2️⃣ FASE DE INDEXACIÓN (Guardado Persistente en Disco)
+    # 2️⃣ INDEXING PHASE (Persistent Storage on Disk)
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
-    # Segmentamos el texto en trozos con solapamiento (Overlap) para no perder contexto
+    # Segment the text into chunks with overlap to maintain context
     lineas = texto_contrato.split("\n")
     chunks = ["\n".join(lineas[i : i + 15]) for i in range(0, len(lineas), 10)]
 
-    # Inicializamos Chroma y guardamos los vectores en la ruta física
+    # Initialize Chroma and save vectors to the physical path
     db = Chroma.from_texts(
         texts=chunks, embedding=embeddings, persist_directory=PERSIST_DIR
     )
-    db.persist()  # Asegura la escritura inmediata en el disco duro de Render
+    db.persist()  # Ensures immediate write to Render's hard drive
 
     # =====================================================================
-    # 🕵️‍♂️ AGENTE 1: EL AUDITOR LEGAL
+    # 🕵️‍♂️ AGENT 1: THE LEGAL AUDITOR
     # =====================================================================
     auditor_legal = Agent(
-        role="Auditor Legal Senior de Contratos Internacionales",
-        goal="Identificar con precisión quirúrgica cláusulas abusivas, penalizaciones financieras ocultas, exclusividades agresivas y vacíos legales en el texto del contrato.",
-        backstory="""Eres un abogado de élite experto en derecho corporativo y comercial europeo, especializado en contratos B2B y laborales (como el Código Civil Polaco - Kodeks Cywilny). 
-        Tu obsesión es encontrar montos exactos de multas, cláusulas desproporcionadas de propiedad intelectual y periodos de preaviso (Notice Periods) peligrosos. 
-        No asumes nada; usas tu herramienta de búsqueda semántica para auditar el documento línea por línea y extraer datos duros y cotizaciones textuales.""",
+        role="Senior International Contract Legal Auditor",
+        goal="Identify with surgical precision abusive clauses, hidden financial penalties, aggressive exclusivities, and legal loopholes in the contract text.",
+        backstory="""You are an elite attorney expert in European corporate and commercial law, specializing in B2B and employment contracts (such as the Polish Civil Code - Kodeks Cywilny). 
+        Your obsession is finding exact fine amounts, disproportionate intellectual property clauses, and dangerous notice periods. 
+        You assume nothing; you use your semantic search tool to audit the document line by line to extract hard data and textual quotes.
+        CRITICAL: You must think, analyze, and write your responses completely in English.""",
         verbose=True,
         tools=[buscar_en_contrato],
     )
 
     # =====================================================================
-    # 🌍 AGENTE 2: EL ASESOR DE RELOCALIZACIÓN
+    # 🌍 AGENT 2: THE RELOCATION ADVISOR
     # =====================================================================
     asesor_repatriacion = Agent(
-        role="Asesor Senior de Movilidad Global e Inmigración",
-        goal="Evaluar el impacto real del contrato sobre el estatus migratorio del profesional, su visado de trabajo, reubicación y su futura Karta Pobytu.",
-        backstory="""Eres un especialista en extranjería y movilidad internacional, con conocimiento profundo de los criterios de las oficinas de inmigración en la Unión Europea (como el Mazowiecki Urząd Wojewöhnia en Varsovia). 
-        Tomas los hallazgos del Auditor Legal y dictaminas si el salario, las horas, el tipo de contrato y las cláusulas de rescisión ponen en riesgo la estabilidad migratoria del empleado o si bloquean un trámite de residencia legal en el extranjero.""",
+        role="Senior Global Mobility and Immigration Advisor",
+        goal="Evaluate the real impact of the contract on the professional's immigration status, work visa, relocation process, and their future Karta Pobytu.",
+        backstory="""You are a specialist in foreign affairs and international mobility, with deep knowledge of immigration office criteria in the European Union (such as the Mazowiecki Urząd Wojewódzki in Warsaw). 
+        You take the findings of the Legal Auditor and dictate whether the salary, working hours, type of contract, and termination clauses jeopardize the employee's immigration stability or block a legal residence procedure abroad.
+        CRITICAL: You must think, analyze, and write your final report completely in English.""",
         verbose=True,
     )
 
     # =====================================================================
-    # 📋 ASIGNACIÓN DE TAREAS SECUENCIALES (Layout HTML Estable)
+    # 📋 SEQUENTIAL TASKS ASSIGNMENT (Stable HTML Layout)
     # =====================================================================
     tarea_auditoria = Task(
-        description="""Utiliza la herramienta de búsqueda semántica para localizar las secciones de penalizaciones, propiedad intelectual y rescisión. 
-        Genera una lista técnica con los riesgos legales más altos encontrados, citando montos o condiciones textuales detectadas.""",
-        expected_output="Un informe técnico y detallado estructurando los riesgos y penalizaciones específicas del contrato.",
+        description="""Use the semantic search tool to locate sections regarding penalties, intellectual property, and contract termination. 
+        Generate a technical list with the highest legal risks found, citing the exact amounts or textual conditions detected. 
+        The entire analysis must be written strictly in English.""",
+        expected_output="A technical and detailed report structuring the specific risks and penalties of the contract written entirely in English.",
         agent=auditor_legal,
     )
 
     tarea_asesoria = Task(
-        description="""Basándote en el informe del Auditor Legal, evalúa el impacto en los visados de reubicación y estabilidad laboral. 
-        Redacta soluciones reales y contrapropuestas legales listas para negociar con la empresa.""",
-        expected_output="""Un informe ejecutivo estructurado estrictamente en dos bloques principales de HTML utilizando las clases del frontend:
+        description="""Based on the Legal Auditor's report, evaluate the impact on relocation visas and job stability. 
+        Draft real solutions and legal counterproposals ready to be used to negotiate with the company.
+        STRICT REQUIREMENT: The output text must be written entirely in English, but it must be wrapped inside the requested HTML layout containers.""",
+        expected_output="""An executive report structured strictly into two main HTML blocks using the frontend utility classes. All text inside must be written in English:
         
-        1. En '<div class="caja-verde-segura">' (Análisis de Impacto):
-           - Tipo de contrato detectado y leyes aplicables (ej. Kodeks Cywilny).
-           - Los 3 riesgos más críticos encontrados, citando el monto o contexto (ej. 'Multa de X cantidad').
-           - Diagnóstico de reubicación: ¿Este contrato sirve para tramitar una residencia estable o tiene banderas rojas?
+        1. Inside '<div class="caja-verde-segura">' (Impact Analysis):
+           - Type of contract detected and applicable laws (e.g., Kodeks Cywilny).
+           - The 3 most critical risks found, citing the specific amount or context (e.g., 'Penalty of X amount').
+           - Relocation Diagnosis: Does this contract support a stable residence application, or does it trigger immigration red flags?
            
-        2. En '<div class="caja-azul-segura">' (Strategic Mitigation Framework):
-           - Contrapropuestas exactas: Texto alternativo legal listo para copiar, pegar y enviar a la empresa para negociar y corregir los riesgos hallados.
-           - Viñetas con las acciones inmediatas que debe tomar el profesional.""",
+        2. Inside '<div class="caja-azul-segura">' (Strategic Mitigation Framework):
+           - Exact counterproposals: Alternative legal text ready to copy, paste, and send to the company to negotiate and amend the discovered risks.
+           - Bullet points listing immediate strategic actions the professional should execute.""",
         agent=asesor_repatriacion,
     )
 
     # =====================================================================
-    # 🚀 ENTRADA EN ACCIÓN DE LA CREW
+    # 🚀 LAUNCH THE CREW WORKFLOW
     # =====================================================================
     crew = Crew(
         agents=[auditor_legal, asesor_repatriacion],
